@@ -99,73 +99,68 @@ async function handleLogout() {
           </nav>
         </div>
 
-        <!-- User Profile Avatar & Dropdown -->
-        <div class="relative" ref="profileDropdownRef">
-          <button
-            type="button"
-            @click="toggleProfileDropdown"
-            class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-800 border-2 border-blue-200 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs transition-all cursor-pointer font-bold text-sm select-none"
-            :title="authStore.user?.username || 'User Profile'"
-            aria-haspopup="true"
-            :aria-expanded="isProfileOpen"
+        <!-- Role Badge & User Profile Avatar Dropdown -->
+        <div class="flex items-center gap-3">
+          <!-- Role Badge displayed outside profile dropdown -->
+          <span
+            :class="[
+              'text-xs px-2.5 py-1 rounded-full font-semibold border uppercase tracking-wider select-none',
+              roleBadgeClass,
+            ]"
           >
-            {{ getInitials(authStore.user?.username) }}
-          </button>
+            {{ authStore.role }}
+          </span>
 
-          <!-- Dropdown Menu -->
-          <transition
-            enter-active-class="transition ease-out duration-100"
-            enter-from-class="transform opacity-0 scale-95"
-            enter-to-class="transform opacity-100 scale-100"
-            leave-active-class="transition ease-in duration-75"
-            leave-from-class="transform opacity-100 scale-100"
-            leave-to-class="transform opacity-0 scale-95"
-          >
-            <div
-              v-if="isProfileOpen"
-              class="absolute right-0 mt-2 w-64 rounded-xl bg-white shadow-xl border border-slate-200 py-2 z-50"
+          <!-- User Avatar & Dropdown -->
+          <div class="relative" ref="profileDropdownRef">
+            <button
+              type="button"
+              @click="toggleProfileDropdown"
+              class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-800 border-2 border-blue-200 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs transition-all cursor-pointer font-bold text-sm select-none"
+              :title="authStore.user?.username || 'User Profile'"
+              aria-haspopup="true"
+              :aria-expanded="isProfileOpen"
             >
-              <!-- User Info Card in Dropdown -->
-              <div class="px-4 py-3 border-b border-slate-100">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
-                    {{ getInitials(authStore.user?.username) }}
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-slate-900 truncate">
-                      {{ authStore.user?.username }}
-                    </p>
-                    <p class="text-xs text-slate-500 truncate">
-                      {{ authStore.user?.email || 'user@hirose.co.id' }}
-                    </p>
-                  </div>
+              {{ getInitials(authStore.user?.username) }}
+            </button>
+
+            <!-- Dropdown Menu: Berisikan Nama Pengguna, Email, dan Tombol Logout -->
+            <transition
+              enter-active-class="transition ease-out duration-100"
+              enter-from-class="transform opacity-0 scale-95"
+              enter-to-class="transform opacity-100 scale-100"
+              leave-active-class="transition ease-in duration-75"
+              leave-from-class="transform opacity-100 scale-100"
+              leave-to-class="transform opacity-0 scale-95"
+            >
+              <div
+                v-if="isProfileOpen"
+                class="absolute right-0 mt-2 w-56 rounded-xl bg-white shadow-xl border border-slate-200 py-1.5 z-50"
+              >
+                <!-- Informasi Pengguna & Email -->
+                <div class="px-4 py-2 border-b border-slate-100">
+                  <p class="text-sm font-semibold text-slate-900 truncate">
+                    {{ authStore.user?.username }}
+                  </p>
+                  <p class="text-xs text-slate-500 truncate mt-0.5">
+                    {{ authStore.user?.email || 'user@hirose.co.id' }}
+                  </p>
                 </div>
 
-                <div class="mt-2.5">
-                  <span
-                    :class="[
-                      'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border uppercase tracking-wider',
-                      roleBadgeClass,
-                    ]"
+                <!-- Tombol Logout -->
+                <div class="p-1 pt-1.5">
+                  <button
+                    type="button"
+                    @click="handleLogout"
+                    class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer text-left font-medium"
                   >
-                    {{ authStore.role }}
-                  </span>
+                    <LogOut class="w-4 h-4" />
+                    <span>Keluar</span>
+                  </button>
                 </div>
               </div>
-
-              <!-- Actions -->
-              <div class="p-1">
-                <button
-                  type="button"
-                  @click="handleLogout"
-                  class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer text-left font-medium"
-                >
-                  <LogOut class="w-4 h-4" />
-                  <span>Keluar</span>
-                </button>
-              </div>
-            </div>
-          </transition>
+            </transition>
+          </div>
         </div>
       </div>
     </div>
