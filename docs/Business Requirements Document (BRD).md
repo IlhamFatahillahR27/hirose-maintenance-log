@@ -174,52 +174,61 @@ Semua aturan hak akses pada tabel di bawah ini **wajib divalidasi langsung oleh 
 
 ```
 +-------------------------------------------------------+
-|                         USERS                         |
+|                         ROLES                         |
 +-------------------------------------------------------+
-| id             : UUID / BIGSERIAL (PK)                |
-| username       : VARCHAR(50) (UNIQUE)                 |
-| email          : VARCHAR(100) (UNIQUE)                |
-| password_hash  : VARCHAR(255)                         |
-| role           : ENUM ('Operator', 'Supervisor',      |
-|                       'Admin')                        |
-| is_active      : BOOLEAN (Default: TRUE)              |
+| id             : BIGSERIAL / INT (PK)                 |
+| name           : VARCHAR(50) (UNIQUE)                 |
+| description    : TEXT (NULLABLE)                      |
 | created_at     : TIMESTAMP WITH TIME ZONE             |
 | updated_at     : TIMESTAMP WITH TIME ZONE             |
 +-------------------------------------------------------+
-                           |
-                           | 1:N (created_by & reviewed_by)
-                           v
-+-------------------------------------------------------+
-|                 MAINTENANCE_REQUESTS                  |
-+-------------------------------------------------------+
-| id                  : UUID / BIGSERIAL (PK)           |
-| machine_id          : FK -> MACHINES.id               |
-| problem_description : TEXT                            |
-| priority            : ENUM ('Low', 'Medium', 'High',  |
-|                            'Critical')                |
-| status              : ENUM ('Submitted', 'Approved',  |
-|                            'Rejected')                |
-| created_by          : FK -> USERS.id                  |
-| created_at          : TIMESTAMP WITH TIME ZONE        |
-| reviewed_by         : FK -> USERS.id (NULLABLE)       |
-| reviewed_at         : TIMESTAMP WITH TIME ZONE (NULL) |
-| reviewer_notes      : TEXT (NULLABLE)                 |
-| updated_at          : TIMESTAMP WITH TIME ZONE        |
-+-------------------------------------------------------+
-                           ^
-                           | N:1
-+-------------------------------------------------------+
-|                       MACHINES                        |
-|             (Read-Only Master via Seeder)             |
-+-------------------------------------------------------+
-| id             : UUID / BIGSERIAL (PK)                |
-| code           : VARCHAR(50) (UNIQUE)                 |
-| name           : VARCHAR(100)                         |
-| location       : VARCHAR(100)                         |
-| is_active      : BOOLEAN (Default: TRUE)              |
-| created_at     : TIMESTAMP WITH TIME ZONE             |
-| updated_at     : TIMESTAMP WITH TIME ZONE             |
-+-------------------------------------------------------+
+        |                               ^
+        | 1:N                           | N:1
+        v                               |
++-----------------------+       +-------------------------------+
+|   ROLE_PERMISSIONS    |       |             USERS             |
++-----------------------+       +-------------------------------+
+| role_id       : FK    |       | id            : BIGSERIAL PK  |
+| permission_id : FK    |       | username      : VARCHAR(50) UK|
+| (PK composite)        |       | email         : VARCHAR(100)UK|
++-----------------------+       | password_hash : VARCHAR(255)  |
+        ^                       | role_id       : FK -> ROLES.id|
+        | N:1                   | is_active     : BOOLEAN (TRUE)|
++-----------------------+       | created_at    : TIMESTAMPTZ   |
+|      PERMISSIONS      |       | updated_at    : TIMESTAMPTZ   |
++-----------------------+       +-------------------------------+
+| id          : INT PK  |                       |
+| name        : VARCHAR |                       | 1:N (created & reviewed)
+| description : TEXT    |                       v
+| created_at  : TZ      |       +-------------------------------+
+| updated_at  : TZ      |       |     MAINTENANCE_REQUESTS      |
++-----------------------+       +-------------------------------+
+                                | id                  : BIGSERIAL PK
+                                | machine_id          : FK -> MACHINES
+                                | problem_description : TEXT
+                                | priority            : ENUM
+                                | status              : ENUM
+                                | created_by          : FK -> USERS
+                                | created_at          : TIMESTAMPTZ
+                                | reviewed_by         : FK -> USERS
+                                | reviewed_at         : TIMESTAMPTZ
+                                | reviewer_notes      : TEXT
+                                | updated_at          : TIMESTAMPTZ
+                                +-------------------------------+
+                                                ^
+                                                | N:1
+                                +-------------------------------+
+                                |           MACHINES            |
+                                | (Read-Only Master via Seeder) |
+                                +-------------------------------+
+                                | id         : BIGSERIAL (PK)   |
+                                | code       : VARCHAR(50) (UQ) |
+                                | name       : VARCHAR(100)     |
+                                | location   : VARCHAR(100)     |
+                                | is_active  : BOOLEAN (TRUE)   |
+                                | created_at : TIMESTAMPTZ      |
+                                | updated_at : TIMESTAMPTZ      |
+                                +-------------------------------+
 ```
 
 ---
@@ -228,12 +237,31 @@ Semua aturan hak akses pada tabel di bawah ini **wajib divalidasi langsung oleh 
 
 Sistem wajib menyediakan seeder yang langsung aktif saat `docker compose up`:
 
+### 7.0 Master Roles & Permissions (Read-Only Relational RBAC)
+Struktur hak akses berbasis relasional database (read-only dari sistem, tanpa modul CRUD frontend) disiapkan untuk skalabilitas masa depan dan pembuktian desain arsitektur saat evaluasi wawancara teknis:
+- **Daftar Roles**: `Operator`, `Supervisor`, `Admin`.
+- **Daftar Permissions**:
+  - `machines:read`: Melihat daftar master mesin & lokasi pabrik
+  - `requests:create`: Membuat laporan kendala mesin baru
+  - `requests:read_own`: Melihat daftar permohonan milik sendiri
+  - `requests:read_all`: Melihat seluruh permohonan dalam sistem
+  - `requests:update_own`: Memperbarui rincian kendala milik sendiri (status `Submitted`)
+  - `requests:update_any`: Mengedit data request milik siapa pun pada status apa pun (khusus Admin)
+  - `requests:review`: Menyetujui (*Approve*) atau Menolak (*Reject*) request (Supervisor & Admin)
+  - `requests:delete`: Menghapus arsip tiket perbaikan (khusus Admin)
+  - `users:manage`: Mengelola akun pengguna dan deaktivasi (khusus Admin)
+- **Pemetaan Hak Akses (Role-Permission Matrix)**:
+  - **Operator**: `machines:read`, `requests:create`, `requests:read_own`, `requests:update_own`
+  - **Supervisor**: `machines:read`, `requests:create`, `requests:read_own`, `requests:read_all`, `requests:review`
+  - **Admin**: Seluruh permissions di atas (penuh)
+
 ### 7.1 Akun Pengguna (Users)
 | Role | Username / Identity | Default Password | Keterangan |
 | :--- | :--- | :--- | :--- |
-| **Operator** | `operator1` | `Password123!` | Digunakan untuk menguji pelaporan kerusakan & filter request milik sendiri |
-| **Supervisor** | `supervisor1` | `Password123!` | Digunakan untuk menguji melihat semua request & aksi approve/reject |
-| **Admin** | `admin1` | `Password123!` | Digunakan untuk menguji manajemen user, edit request, dan hapus request |
+| **Operator** | `operator1` | `Password123!` | Digunakan untuk menguji pelaporan kerusakan & filter request milik sendiri (terhubung ke role_id Operator) |
+| **Supervisor** | `supervisor1` | `Password123!` | Digunakan untuk menguji melihat semua request & aksi approve/reject (terhubung ke role_id Supervisor) |
+| **Admin** | `admin1` | `Password123!` | Digunakan untuk menguji manajemen user, edit request, dan hapus request (terhubung ke role_id Admin) |
+| **Operator (Deactivated)** | `inactive_user` | `Password123!` | Digunakan untuk memverifikasi penolakan login akun nonaktif (`is_active = false`, US-AUTH-02) |
 
 ### 7.2 Master Mesin & Lokasi Pabrik (Machines)
 | Kode Mesin (`code`) | Nama Mesin (`name`) | Lokasi Pabrik (`location`) |

@@ -1,5 +1,5 @@
 > [!NOTE]
-> Dokumen ini mendefinisikan seluruh skenario kebutuhan pengguna (*User Stories*) beserta kriteria penerimaan (*Acceptance Criteria* berbasis *Given-When-Then*) untuk aplikasi **Factory Maintenance Request Log**. Seluruh pembatasan hak akses (*RBAC*) wajib ditegakkan langsung di level API backend (Hono) dan divalidasi dengan pengujian otomatis (*Vitest*).
+> Dokumen ini mendefinisikan seluruh skenario kebutuhan pengguna (*User Stories*) beserta kriteria penerimaan (*Acceptance Criteria* berbasis *Given-When-Then*) untuk aplikasi **Factory Maintenance Request Log**. Seluruh pembatasan hak akses (*RBAC*) didukung oleh skema relasional database (`roles`, `permissions`, `role_permissions`), ditegakkan langsung di level API backend (Hono), dan divalidasi dengan pengujian otomatis (*Vitest*).
 
 ---
 

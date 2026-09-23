@@ -9,24 +9,28 @@ Sistem dirancang menggunakan pola **Monorepo Ringan** (*single repository* denga
 
 ```text
 hirose-maintenance-log/
-├── .env.example                  # Template variabel lingkungan global
-├── .gitignore                    # Mengabaikan node_modules, dist, .env, dll
+├── AGENTS.md                     # Aturan universal agen AI (Database Safety & .env Protection)
+├── GEMINI.md                     # Aturan workspace Gemini CLI / Antigravity
 ├── docker-compose.yml            # Orkestrasi container (DB, Backend, Frontend)
 ├── Jenkinsfile                   # Definisi tahapan CI (Lint, Test, Build)
 ├── README.md                     # Dokumentasi setup, arsitektur, akun seed, AI Disclosure
 │
 ├── backend/                      # Service API Backend (Hono + TypeScript)
+│   ├── .env.example              # Template variabel lingkungan backend (Port, DB, JWT)
+│   ├── .gitignore                # Mengabaikan node_modules, dist, .env, dll
 │   ├── Dockerfile                # Multi-stage Docker build untuk backend
+│   ├── drizzle.config.ts         # Konfigurasi migrasi Drizzle Kit
 │   ├── package.json              # Dependencies backend
 │   ├── tsconfig.json             # Konfigurasi TypeScript backend
 │   ├── vitest.config.ts          # Konfigurasi automated testing (Vitest)
 │   ├── src/
-│   │   ├── config/               # Environment & database connection pooling
+│   │   ├── config/               # Environment (env.ts) & database connection pooling
 │   │   ├── db/                   # Skema database, migrasi, dan seeder
 │   │   │   ├── index.ts          # Inisialisasi koneksi database (Postgres client / Drizzle)
-│   │   │   ├── schema.ts         # Definisi tabel (users, machines, requests)
-│   │   │   ├── seed.ts           # Script pembuat akun default, mesin, & sample requests
-│   │   │   └── migrations/       # File SQL / migration files
+│   │   │   ├── schema.ts         # Definisi tabel (roles, permissions, role_permissions, users, machines, requests)
+│   │   │   ├── migrate.ts        # Script runner migrasi Drizzle programatik
+│   │   │   ├── seed.ts           # Script pembuat data roles, permissions, akun, mesin, & requests
+│   │   │   └── migrations/       # File SQL / migration files hasil generate
 │   │   ├── middlewares/          # Middleware Hono
 │   │   │   ├── auth.middleware.ts     # Validasi JWT / sesi & penentuan user login
 │   │   │   ├── rbac.middleware.ts     # Penegakan hak akses role & kepemilikan data
@@ -37,35 +41,28 @@ hirose-maintenance-log/
 │   │   │   ├── requests/         # CRUD maintenance requests, filter, pagination, review
 │   │   │   └── users/            # User management khusus Admin & deaktivasi
 │   │   ├── routes/               # Pendaftaran seluruh modul route & OpenAPI spec
+│   │   ├── utils/                # Utilitas (password.ts dengan bcryptjs)
 │   │   └── index.ts              # Entry point utama server Hono & endpoint /health
 │   └── tests/                    # Pengujian otomatis RBAC (Bonus #6)
 │       ├── rbac.test.ts          # Automated tests pembuktian izin matriks
 │       └── helpers.ts            # Test utilities & auth token mock
 │
-└── frontend/                     # Antarmuka Pengguna (Nuxt / Vue 3)
-    ├── Dockerfile                # Multi-stage Docker build untuk frontend
+└── frontend/                     # Antarmuka Pengguna (Vue 3 Vite SPA)
+    ├── .env.example              # Template variabel lingkungan frontend (VITE_API_BASE_URL)
+    ├── .gitignore                # Mengabaikan node_modules, dist, .env, dll
+    ├── Dockerfile                # Multi-stage Docker build untuk frontend (Nginx)
+    ├── nginx.conf                # Konfigurasi Nginx SPA reverse proxy & history mode
     ├── package.json              # Dependencies frontend
-    ├── nuxt.config.ts            # Konfigurasi Nuxt (atau vite.config.ts jika Vue 3 SPA)
-    ├── app.vue                   # Root Vue component
-    ├── assets/                   # Styling global (CSS / Tailwind / Icons)
-    ├── components/               # Komponen UI reusable
-    │   ├── Navbar.vue            # Navigasi atas dengan info user & tombol logout
-    │   ├── StatusBadge.vue       # Badge warna status (Submitted, Approved, Rejected)
-    │   ├── PriorityBadge.vue     # Badge warna prioritas (Low, Medium, High, Critical)
-    │   ├── RequestModal.vue      # Modal form buat/edit permohonan maintenance
-    │   └── ReviewModal.vue       # Modal persetujuan/penolakan untuk Supervisor
-    ├── composables/              # Custom composables / fetch wrapper (useApi, useAuth)
-    ├── layouts/                  # Layout tampilan (default, auth)
-    ├── middleware/               # Client-side route guard (auth & role check)
-    ├── pages/                    # Halaman aplikasi
-    │   ├── index.vue             # Redirect atau landing page
-    │   ├── login.vue             # Halaman login
-    │   ├── requests/
-    │   │   ├── index.vue         # Tabel daftar request + filter + pagination + search
-    │   │   └── [id].vue          # Halaman rincian tiket & riwayat peninjauan
-    │   └── users/
-    │       └── index.vue         # Halaman kelola user (khusus Admin)
-    └── stores/                   # State management (Pinia) untuk menyimpan user & token
+    ├── vite.config.ts            # Konfigurasi Vite Vue 3
+    ├── index.html                # Entry point HTML
+    ├── src/                      # Source code frontend
+    │   ├── App.vue               # Root Vue component
+    │   ├── assets/               # Styling global (CSS / Tailwind / Icons)
+    │   ├── components/           # Komponen UI reusable (Navbar, Badges, Modals)
+    │   ├── composables/          # Custom composables / fetch wrapper (useApi, useAuth)
+    │   ├── router/               # Vue Router & client-side route guard (auth & role check)
+    │   ├── views/                # Halaman aplikasi (LoginView, RequestsView, UsersView)
+    │   └── stores/               # State management (Pinia) untuk user & token
 ```
 
 ---
@@ -157,6 +154,7 @@ npx nuxi@latest init frontend
 # Opsi B: Vue 3 Vite SPA (Alternatif jika ingin build Nginx super ringan)
 # npm create vue@latest frontend
 
-# 3. Buat file root
-# docker-compose.yml, Jenkinsfile, .env.example, README.md
+# 3. Buat file root & template konfigurasi
+# Root: docker-compose.yml, Jenkinsfile, README.md, AGENTS.md, GEMINI.md
+# Sub-folders: backend/.env.example, frontend/.env.example
 ```
