@@ -14,7 +14,17 @@ async function seed() {
   console.log('🌱 Starting comprehensive database seeding...');
 
   try {
-    // 0. Clean existing data in reverse dependency order
+    // 0. Check if database is already seeded
+    const userCheck = await db.execute(sql`SELECT count(*)::int as count FROM users`);
+    const count = Number((userCheck as any)[0]?.count ?? (userCheck as any).rows?.[0]?.count ?? 0);
+
+    if (count > 0 && process.env.FORCE_SEED !== 'true') {
+      console.log('ℹ️ Database is already seeded (records exist). Skipping seed to preserve data.');
+      console.log('💡 Tip: Set environment variable FORCE_SEED=true to force a clean re-seed.');
+      return;
+    }
+
+    // Clean existing data in reverse dependency order
     console.log('🧹 Cleaning existing records (idempotent reset)...');
     await db.execute(
       sql`TRUNCATE TABLE maintenance_requests, users, machines, role_permissions, permissions, roles RESTART IDENTITY CASCADE`

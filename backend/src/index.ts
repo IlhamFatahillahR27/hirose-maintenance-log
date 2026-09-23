@@ -130,8 +130,12 @@ app.doc('/openapi.json', {
   },
   servers: [
     {
+      url: '/',
+      description: 'Current host (Reverse Proxy / Nginx)',
+    },
+    {
       url: `http://localhost:${env.PORT}`,
-      description: 'Local development server',
+      description: 'Direct backend server',
     },
   ],
 });
