@@ -1,4 +1,4 @@
-import { eq, asc, and, or, ilike, count, type SQL } from 'drizzle-orm';
+import { eq, asc, and, or, ilike, count, ne, type SQL } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import { users, roles } from '../../db/schema.js';
 import { hashPassword } from '../../utils/password.js';
@@ -7,6 +7,7 @@ import type {
   UsersQueryInput,
   CreateUserInput,
   UpdateUserStatusInput,
+  UpdateUserInput,
 } from './users.schema.js';
 
 export class HttpError extends Error {
@@ -213,3 +214,69 @@ export async function updateUserStatus(
     updated_at: updated.updated_at.toISOString(),
   };
 }
+
+/**
+ * Updates a user's email, role, and/or password (FR-USR-03, BRD 3.2).
+ * Restricted to Admin role.
+ */
+export async function updateUser(
+  targetUserId: number,
+  input: UpdateUserInput
+): Promise<UserItem> {
+  const existing = await db.query.users.findFirst({
+    where: eq(users.id, targetUserId),
+    with: { role: true },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, 'User not found');
+  }
+
+  const updateData: Record<string, any> = {
+    updated_at: new Date(),
+  };
+
+  if (input.email && input.email !== existing.email) {
+    const emailExists = await db.query.users.findFirst({
+      where: and(eq(users.email, input.email), ne(users.id, targetUserId)),
+    });
+    if (emailExists) {
+      throw new HttpError(409, 'Email is already registered');
+    }
+    updateData.email = input.email;
+  }
+
+  let finalRole = existing.role.name;
+  if (input.role) {
+    const roleRecord = await db.query.roles.findFirst({
+      where: eq(roles.name, input.role),
+    });
+    if (!roleRecord) {
+      throw new HttpError(400, 'Invalid role specified');
+    }
+    updateData.role_id = roleRecord.id;
+    finalRole = roleRecord.name;
+  }
+
+  if (input.password && input.password.trim()) {
+    updateData.password_hash = await hashPassword(input.password);
+  }
+
+  const [updated] = await db
+    .update(users)
+    .set(updateData)
+    .where(eq(users.id, targetUserId))
+    .returning();
+
+  return {
+    id: updated.id,
+    username: updated.username,
+    email: updated.email,
+    role_id: updated.role_id,
+    role: finalRole,
+    is_active: updated.is_active,
+    created_at: updated.created_at.toISOString(),
+    updated_at: updated.updated_at.toISOString(),
+  };
+}
+

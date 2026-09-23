@@ -6,6 +6,7 @@ import {
   UsersQuerySchema,
   CreateUserRequestSchema,
   UpdateUserStatusRequestSchema,
+  UpdateUserRequestSchema,
   UsersListResponseSchema,
   SingleUserResponseSchema,
   ErrorResponseSchema,
@@ -14,6 +15,7 @@ import {
   getAllUsers,
   createUser,
   updateUserStatus,
+  updateUser,
   HttpError,
 } from './users.service.js';
 
@@ -251,3 +253,93 @@ usersRoutes.openapi(updateUserStatusRoute, async (c) => {
     throw err;
   }
 });
+
+// ==========================================
+// 4. PUT /api/users/:id (Update User - Admin Only)
+// ==========================================
+export const updateUserRoute = createRoute({
+  method: 'put',
+  path: '/{id}',
+  tags: ['Users'],
+  summary: 'Update user details and role (FR-USR-03, BRD 3.2)',
+  description:
+    'Updates email, role, or password of an existing user. Restricted strictly to Admin role.',
+  middleware: [authMiddleware, requireRoles(['Admin'])] as const,
+  security: [{ BearerAuth: [] }],
+  request: {
+    params: UserIdParamSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: UpdateUserRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: SingleUserResponseSchema,
+        },
+      },
+      description: 'User updated successfully',
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+      description: 'Bad request - validation error',
+    },
+    401: {
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+      description: 'Unauthorized',
+    },
+    403: {
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+      description: 'Forbidden - Only Admin can edit users',
+    },
+    404: {
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+      description: 'User not found',
+    },
+    409: {
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+      description: 'Conflict - Email already registered to another user',
+    },
+  },
+});
+
+usersRoutes.openapi(updateUserRoute, async (c) => {
+  const { id } = c.req.valid('param');
+  const body = c.req.valid('json');
+
+  try {
+    const data = await updateUser(id, body);
+    return c.json({ data }, 200);
+  } catch (err: any) {
+    if (err instanceof HttpError) {
+      return c.json({ error: err.message }, err.status as any);
+    }
+    throw err;
+  }
+});
+

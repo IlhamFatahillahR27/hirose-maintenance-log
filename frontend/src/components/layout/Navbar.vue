@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { Button } from '@/components/ui/button'
-import { Wrench, Users, ClipboardList, LogOut, User as UserIcon } from 'lucide-vue-next'
+import { getInitials } from '@/utils/initials'
+import { Wrench, Users, ClipboardList, LogOut } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+
+const isProfileOpen = ref(false)
+const profileDropdownRef = ref<HTMLElement | null>(null)
 
 const roleBadgeClass = computed(() => {
   switch (authStore.role) {
@@ -21,7 +24,33 @@ const roleBadgeClass = computed(() => {
   }
 })
 
+function toggleProfileDropdown() {
+  isProfileOpen.value = !isProfileOpen.value
+}
+
+function closeProfileDropdown() {
+  isProfileOpen.value = false
+}
+
+function handleClickOutside(event: MouseEvent) {
+  if (
+    profileDropdownRef.value &&
+    !profileDropdownRef.value.contains(event.target as Node)
+  ) {
+    closeProfileDropdown()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 async function handleLogout() {
+  closeProfileDropdown()
   await authStore.logout()
   router.push('/login')
 }
@@ -70,30 +99,73 @@ async function handleLogout() {
           </nav>
         </div>
 
-        <!-- User Profile & Logout -->
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
-            <UserIcon class="w-4 h-4 text-slate-500" />
-            <span class="text-sm font-semibold text-slate-800">{{ authStore.user?.username }}</span>
-            <span
-              :class="[
-                'text-xs px-2 py-0.5 rounded-full font-medium border uppercase tracking-wider',
-                roleBadgeClass,
-              ]"
-            >
-              {{ authStore.role }}
-            </span>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            @click="handleLogout"
-            class="flex items-center gap-1.5 text-slate-600 hover:text-red-600 hover:border-red-200"
+        <!-- User Profile Avatar & Dropdown -->
+        <div class="relative" ref="profileDropdownRef">
+          <button
+            type="button"
+            @click="toggleProfileDropdown"
+            class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-800 border-2 border-blue-200 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs transition-all cursor-pointer font-bold text-sm select-none"
+            :title="authStore.user?.username || 'User Profile'"
+            aria-haspopup="true"
+            :aria-expanded="isProfileOpen"
           >
-            <LogOut class="w-4 h-4" />
-            <span class="hidden sm:inline">Keluar</span>
-          </Button>
+            {{ getInitials(authStore.user?.username) }}
+          </button>
+
+          <!-- Dropdown Menu -->
+          <transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="transform opacity-0 scale-95"
+            enter-to-class="transform opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="transform opacity-100 scale-100"
+            leave-to-class="transform opacity-0 scale-95"
+          >
+            <div
+              v-if="isProfileOpen"
+              class="absolute right-0 mt-2 w-64 rounded-xl bg-white shadow-xl border border-slate-200 py-2 z-50"
+            >
+              <!-- User Info Card in Dropdown -->
+              <div class="px-4 py-3 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
+                    {{ getInitials(authStore.user?.username) }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-slate-900 truncate">
+                      {{ authStore.user?.username }}
+                    </p>
+                    <p class="text-xs text-slate-500 truncate">
+                      {{ authStore.user?.email || 'user@hirose.co.id' }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="mt-2.5">
+                  <span
+                    :class="[
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border uppercase tracking-wider',
+                      roleBadgeClass,
+                    ]"
+                  >
+                    {{ authStore.role }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="p-1">
+                <button
+                  type="button"
+                  @click="handleLogout"
+                  class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer text-left font-medium"
+                >
+                  <LogOut class="w-4 h-4" />
+                  <span>Keluar</span>
+                </button>
+              </div>
+            </div>
+          </transition>
         </div>
       </div>
     </div>

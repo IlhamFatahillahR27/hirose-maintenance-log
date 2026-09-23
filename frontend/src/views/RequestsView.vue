@@ -12,6 +12,7 @@ import ReviewModal from '@/components/requests/ReviewModal.vue'
 import DeleteDialog from '@/components/requests/DeleteDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Plus,
   Search,
@@ -161,10 +162,9 @@ onMounted(() => {
       <div class="flex items-center gap-2">
         <Button
           variant="outline"
-          size="sm"
           @click="fetchRequests"
           :disabled="isLoading"
-          class="gap-1.5 text-slate-600"
+          class="h-9 gap-1.5 text-slate-700 bg-white"
         >
           <RefreshCw :class="['w-4 h-4', isLoading ? 'animate-spin' : '']" />
           <span>Muat Ulang</span>
@@ -172,7 +172,7 @@ onMounted(() => {
 
         <Button
           @click="isCreateOpen = true"
-          class="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+          class="h-9 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
         >
           <Plus class="w-4 h-4" />
           <span>Buat Laporan Kendala</span>
@@ -180,65 +180,78 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Filter & Search Toolbar -->
-    <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-xs space-y-3">
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <!-- Search Input with Debounce -->
-        <div class="relative">
-          <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-          <Input
-            :model-value="searchKeyword"
-            @update:model-value="onSearchInput"
-            placeholder="Cari kode mesin, nama, atau kendala..."
-            class="pl-9 h-9"
-          />
-        </div>
+    <!-- Unified Card Container: Filter Toolbar & DataTable -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <!-- Filter & Search Toolbar Section -->
+      <div class="p-5 border-b border-slate-200 bg-slate-50/50">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+          <!-- Filter: Search -->
+          <div>
+            <Label for="filter-search" class="block text-xs font-semibold text-slate-700 mb-1.5">
+              Pencarian
+            </Label>
+            <div class="relative">
+              <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+              <Input
+                id="filter-search"
+                :model-value="searchKeyword"
+                @update:model-value="onSearchInput"
+                class="pl-9 h-9 bg-white"
+              />
+            </div>
+          </div>
 
-        <!-- Filter Status -->
-        <div>
-          <select
-            v-model="selectedStatus"
-            class="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            <option value="">Status: Semua</option>
-            <option value="Submitted">Submitted (Menunggu Review)</option>
-            <option value="Approved">Approved (Disetujui)</option>
-            <option value="Rejected">Rejected (Ditolak)</option>
-          </select>
-        </div>
+          <!-- Filter: Status -->
+          <div>
+            <Label for="filter-status" class="block text-xs font-semibold text-slate-700 mb-1.5">
+              Status Tiket
+            </Label>
+            <select
+              id="filter-status"
+              v-model="selectedStatus"
+              class="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <option value="">Semua Status</option>
+              <option value="Submitted">Submitted (Menunggu Review)</option>
+              <option value="Approved">Approved (Disetujui)</option>
+              <option value="Rejected">Rejected (Ditolak)</option>
+            </select>
+          </div>
 
-        <!-- Filter Priority -->
-        <div>
-          <select
-            v-model="selectedPriority"
-            class="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            <option value="">Prioritas: Semua</option>
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-            <option value="Critical">Critical</option>
-          </select>
-        </div>
+          <!-- Filter: Priority -->
+          <div>
+            <Label for="filter-priority" class="block text-xs font-semibold text-slate-700 mb-1.5">
+              Prioritas Kendala
+            </Label>
+            <select
+              id="filter-priority"
+              v-model="selectedPriority"
+              class="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <option value="">Semua Prioritas</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
 
-        <!-- Reset Button -->
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            @click="resetFilters"
-            class="w-full h-9 gap-1.5 text-slate-600 hover:text-slate-900"
-          >
-            <FilterX class="w-4 h-4" />
-            <span>Reset Filter</span>
-          </Button>
+          <!-- Reset Button -->
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              @click="resetFilters"
+              class="w-full h-9 gap-1.5 text-slate-600 hover:text-slate-900 bg-white"
+            >
+              <FilterX class="w-4 h-4" />
+              <span>Reset Filter</span>
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- PrimeVue Lazy DataTable -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <!-- PrimeVue Lazy DataTable -->
       <DataTable
         :value="requests"
         :lazy="true"
@@ -246,9 +259,11 @@ onMounted(() => {
         :rows="limit"
         :totalRecords="totalRecords"
         :loading="isLoading"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
+        currentPageReportTemplate="Menampilkan {first} sampai {last} dari {totalRecords} data"
         @page="onPage($event)"
         responsiveLayout="scroll"
-        class="text-sm p-datatable-sm"
+        class="text-sm"
       >
         <template #empty>
           <div class="p-8 text-center text-slate-500">
@@ -256,7 +271,7 @@ onMounted(() => {
           </div>
         </template>
 
-        <Column field="id" header="ID" headerStyle="width: 70px">
+        <Column field="id" header="ID" headerStyle="width: 80px">
           <template #body="{ data }">
             <span class="font-mono text-xs font-semibold text-slate-700">#{{ data.id }}</span>
           </template>

@@ -102,6 +102,27 @@ export const UpdateUserStatusRequestSchema = z
   })
   .openapi('UpdateUserStatusRequest');
 
+export const UpdateUserRequestSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .email('Invalid email address format')
+      .max(100, 'Email must not exceed 100 characters')
+      .optional()
+      .openapi({ example: 'operator2@hirose.co.id', description: 'Updated email address' }),
+    role: z
+      .enum(['Operator', 'Supervisor', 'Admin'])
+      .optional()
+      .openapi({ example: 'Supervisor', description: 'Updated role assigned to user' }),
+    password: z
+      .string()
+      .min(6, 'Password must be at least 6 characters')
+      .optional()
+      .openapi({ example: 'NewPassword123!', description: 'Optional new password' }),
+  })
+  .openapi('UpdateUserRequest');
+
 export const ErrorResponseSchema = z
   .object({
     error: z.string().openapi({ example: 'Error message description' }),
@@ -113,3 +134,5 @@ export type UserItem = z.infer<typeof UserItemSchema>;
 export type UsersQueryInput = z.infer<typeof UsersQuerySchema>;
 export type CreateUserInput = z.infer<typeof CreateUserRequestSchema>;
 export type UpdateUserStatusInput = z.infer<typeof UpdateUserStatusRequestSchema>;
+export type UpdateUserInput = z.infer<typeof UpdateUserRequestSchema>;
+

@@ -5,18 +5,20 @@ import { useAuthStore } from '@/stores/auth'
 import DataTable, { type DataTablePageEvent } from 'primevue/datatable'
 import Column from 'primevue/column'
 import CreateUserModal from '@/components/users/CreateUserModal.vue'
+import EditUserModal from '@/components/users/EditUserModal.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   UserPlus,
   Search,
   FilterX,
-  UserX,
-  UserCheck,
   RefreshCw,
   Mail,
   Shield,
   Loader2,
+  Edit,
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -33,8 +35,10 @@ const searchKeyword = ref('')
 const selectedRole = ref('')
 const selectedActive = ref('')
 
-// Modal
+// Modals
 const isCreateOpen = ref(false)
+const isEditOpen = ref(false)
+const selectedUser = ref<any | null>(null)
 const updatingUserId = ref<number | null>(null)
 const actionError = ref<string | null>(null)
 
@@ -91,6 +95,11 @@ function onPage(event: DataTablePageEvent) {
   currentPage.value = event.page + 1
   limit.value = event.rows
   fetchUsers()
+}
+
+function openEditUser(user: any) {
+  selectedUser.value = user
+  isEditOpen.value = true
 }
 
 async function toggleUserStatus(user: any) {
@@ -162,10 +171,9 @@ onMounted(() => {
       <div class="flex items-center gap-2">
         <Button
           variant="outline"
-          size="sm"
           @click="fetchUsers"
           :disabled="isLoading"
-          class="gap-1.5 text-slate-600"
+          class="h-9 gap-1.5 text-slate-700 bg-white"
         >
           <RefreshCw :class="['w-4 h-4', isLoading ? 'animate-spin' : '']" />
           <span>Muat Ulang</span>
@@ -173,7 +181,7 @@ onMounted(() => {
 
         <Button
           @click="isCreateOpen = true"
-          class="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+          class="h-9 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
         >
           <UserPlus class="w-4 h-4" />
           <span>Tambah Pengguna</span>
@@ -185,63 +193,76 @@ onMounted(() => {
       {{ actionError }}
     </div>
 
-    <!-- Filter & Search Toolbar -->
-    <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-xs space-y-3">
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <!-- Search Input -->
-        <div class="relative">
-          <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-          <Input
-            :model-value="searchKeyword"
-            @update:model-value="onSearchInput"
-            placeholder="Cari username atau email..."
-            class="pl-9 h-9"
-          />
-        </div>
+    <!-- Unified Card Container: Filter Toolbar & DataTable -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <!-- Filter & Search Toolbar Section -->
+      <div class="p-5 border-b border-slate-200 bg-slate-50/50">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+          <!-- Filter: Search -->
+          <div>
+            <Label for="filter-user-search" class="block text-xs font-semibold text-slate-700 mb-1.5">
+              Pencarian
+            </Label>
+            <div class="relative">
+              <Search class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+              <Input
+                id="filter-user-search"
+                :model-value="searchKeyword"
+                @update:model-value="onSearchInput"
+                class="pl-9 h-9 bg-white"
+              />
+            </div>
+          </div>
 
-        <!-- Filter Role -->
-        <div>
-          <select
-            v-model="selectedRole"
-            class="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            <option value="">Role: Semua</option>
-            <option value="Operator">Operator</option>
-            <option value="Supervisor">Supervisor</option>
-            <option value="Admin">Admin</option>
-          </select>
-        </div>
+          <!-- Filter: Role -->
+          <div>
+            <Label for="filter-user-role" class="block text-xs font-semibold text-slate-700 mb-1.5">
+              Role Wewenang
+            </Label>
+            <select
+              id="filter-user-role"
+              v-model="selectedRole"
+              class="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <option value="">Semua Role</option>
+              <option value="Operator">Operator</option>
+              <option value="Supervisor">Supervisor</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
 
-        <!-- Filter Status Aktif -->
-        <div>
-          <select
-            v-model="selectedActive"
-            class="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            <option value="">Status: Semua</option>
-            <option value="true">Aktif Saja</option>
-            <option value="false">Nonaktif Saja</option>
-          </select>
-        </div>
+          <!-- Filter: Status -->
+          <div>
+            <Label for="filter-user-status" class="block text-xs font-semibold text-slate-700 mb-1.5">
+              Status Akun
+            </Label>
+            <select
+              id="filter-user-status"
+              v-model="selectedActive"
+              class="flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <option value="">Semua Status</option>
+              <option value="true">Aktif Saja</option>
+              <option value="false">Nonaktif Saja</option>
+            </select>
+          </div>
 
-        <!-- Reset Button -->
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            @click="resetFilters"
-            class="w-full h-9 gap-1.5 text-slate-600 hover:text-slate-900"
-          >
-            <FilterX class="w-4 h-4" />
-            <span>Reset Filter</span>
-          </Button>
+          <!-- Reset Button -->
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              @click="resetFilters"
+              class="w-full h-9 gap-1.5 text-slate-600 hover:text-slate-900 bg-white"
+            >
+              <FilterX class="w-4 h-4" />
+              <span>Reset Filter</span>
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- PrimeVue Lazy DataTable -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <!-- PrimeVue Lazy DataTable -->
       <DataTable
         :value="users"
         :lazy="true"
@@ -249,9 +270,11 @@ onMounted(() => {
         :rows="limit"
         :totalRecords="totalRecords"
         :loading="isLoading"
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
+        currentPageReportTemplate="Menampilkan {first} sampai {last} dari {totalRecords} pengguna"
         @page="onPage($event)"
         responsiveLayout="scroll"
-        class="text-sm p-datatable-sm"
+        class="text-sm"
       >
         <template #empty>
           <div class="p-8 text-center text-slate-500">
@@ -259,7 +282,7 @@ onMounted(() => {
           </div>
         </template>
 
-        <Column field="id" header="ID" headerStyle="width: 70px">
+        <Column field="id" header="ID" headerStyle="width: 80px">
           <template #body="{ data }">
             <span class="font-mono text-xs font-semibold text-slate-700">#{{ data.id }}</span>
           </template>
@@ -299,22 +322,27 @@ onMounted(() => {
           </template>
         </Column>
 
-        <Column header="Status Akun" headerStyle="width: 130px">
+        <!-- Status Column with Interactive Switch -->
+        <Column header="Status Akun" headerStyle="width: 160px">
           <template #body="{ data }">
-            <span
-              v-if="data.is_active"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
-            >
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span>Aktif</span>
-            </span>
-            <span
-              v-else
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"
-            >
-              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-              <span>Nonaktif</span>
-            </span>
+            <div class="flex items-center gap-2.5">
+              <Loader2 v-if="updatingUserId === data.id" class="w-4 h-4 animate-spin text-blue-600" />
+              <Switch
+                v-else
+                :model-value="data.is_active"
+                @update:model-value="toggleUserStatus(data)"
+                :disabled="updatingUserId === data.id || data.id === authStore.user?.id"
+                :title="data.id === authStore.user?.id ? 'Tidak dapat menonaktifkan akun sendiri' : 'Klik untuk ubah status akun'"
+              />
+              <span
+                :class="[
+                  'text-xs font-semibold select-none',
+                  data.is_active ? 'text-emerald-700' : 'text-slate-400',
+                ]"
+              >
+                {{ data.is_active ? 'Aktif' : 'Nonaktif' }}
+              </span>
+            </div>
           </template>
         </Column>
 
@@ -324,36 +352,18 @@ onMounted(() => {
           </template>
         </Column>
 
-        <!-- Status Toggle Action -->
-        <Column header="Aksi Deaktivasi" headerStyle="width: 160px; text-align: right">
+        <!-- Actions Column (Edit User) -->
+        <Column header="Aksi" headerStyle="width: 90px; text-align: right">
           <template #body="{ data }">
             <div class="flex items-center justify-end">
               <Button
-                v-if="data.is_active"
                 variant="outline"
                 size="sm"
-                @click="toggleUserStatus(data)"
-                :disabled="updatingUserId === data.id || data.id === authStore.user?.id"
-                class="h-8 gap-1 text-red-600 hover:bg-red-50 hover:border-red-300"
-                :title="data.id === authStore.user?.id ? 'Tidak dapat menonaktifkan akun sendiri' : 'Nonaktifkan akun pengguna ini'"
+                @click="openEditUser(data)"
+                class="h-8 w-8 p-0 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                title="Edit Pengguna"
               >
-                <Loader2 v-if="updatingUserId === data.id" class="w-3.5 h-3.5 animate-spin" />
-                <UserX v-else class="w-3.5 h-3.5" />
-                <span>Nonaktifkan</span>
-              </Button>
-
-              <Button
-                v-else
-                variant="outline"
-                size="sm"
-                @click="toggleUserStatus(data)"
-                :disabled="updatingUserId === data.id"
-                class="h-8 gap-1 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300"
-                title="Aktifkan kembali akun pengguna ini"
-              >
-                <Loader2 v-if="updatingUserId === data.id" class="w-3.5 h-3.5 animate-spin" />
-                <UserCheck v-else class="w-3.5 h-3.5" />
-                <span>Aktifkan</span>
+                <Edit class="w-4 h-4" />
               </Button>
             </div>
           </template>
@@ -366,6 +376,14 @@ onMounted(() => {
       :open="isCreateOpen"
       @update:open="isCreateOpen = $event"
       @created="fetchUsers"
+    />
+
+    <!-- Modal Edit User -->
+    <EditUserModal
+      :open="isEditOpen"
+      :user="selectedUser"
+      @update:open="isEditOpen = $event"
+      @updated="fetchUsers"
     />
   </div>
 </template>

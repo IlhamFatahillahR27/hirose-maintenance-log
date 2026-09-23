@@ -341,4 +341,59 @@ describe('Fase 2.4: User Management API & RBAC Test Suite', () => {
       expect(body.error).toBe('User not found');
     });
   });
+
+  // ==========================================
+  // PUT /api/users/:id (FR-USR-03, BRD 3.2: Update User)
+  // ==========================================
+  describe('PUT /api/users/:id (FR-USR-03, BRD 3.2)', () => {
+    it('should allow Admin to update user email and role -> 200 OK', async () => {
+      const res = await app.request(`/api/users/${createdUserId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({
+          email: 'updated_user@hirose.co.id',
+          role: 'Supervisor',
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.email).toBe('updated_user@hirose.co.id');
+      expect(body.data.role).toBe('Supervisor');
+    });
+
+    it('should reject user update by Operator -> 403 Forbidden', async () => {
+      const res = await app.request(`/api/users/${createdUserId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${operatorToken}`,
+        },
+        body: JSON.stringify({
+          role: 'Admin',
+        }),
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 404 when updating non-existent user', async () => {
+      const res = await app.request('/api/users/999999', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({
+          role: 'Operator',
+        }),
+      });
+
+      expect(res.status).toBe(404);
+    });
+  });
 });
+
