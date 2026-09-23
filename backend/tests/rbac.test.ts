@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { app } from '../src/index.js';
 import { loginAndGetToken } from './helpers.js';
 
-describe('Fase 2.3: Modul Maintenance Request API & RBAC Matrix Tests', () => {
+describe('Fase 3: Automated Testing RBAC (Vitest) - Full 18-Point Permission Matrix (Bonus #6)', () => {
   let operatorToken: string;
   let operatorUser: any;
   let supervisorToken: string;
@@ -421,6 +421,143 @@ describe('Fase 2.3: Modul Maintenance Request API & RBAC Matrix Tests', () => {
       },
     });
     expect(verifyRes.status).toBe(404);
+  });
+
+  // ==========================================
+  // TEST-RBAC-15: Admin Access Users List
+  // ==========================================
+  it('TEST-RBAC-15: Admin accesses user list -> 200 OK without exposing password hashes', async () => {
+    const res = await app.request('/api/users', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+      },
+    });
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as any;
+    expect(body.data).toBeInstanceOf(Array);
+    expect(body.data.length).toBeGreaterThanOrEqual(3);
+
+    for (const u of body.data) {
+      expect(u).toHaveProperty('id');
+      expect(u).toHaveProperty('username');
+      expect(u).toHaveProperty('email');
+      expect(u).toHaveProperty('role');
+      expect(u).toHaveProperty('is_active');
+      expect(u).toHaveProperty('created_at');
+      // NFR-SEC-01 & US-USR-01: Zero password leak
+      expect(u).not.toHaveProperty('password');
+      expect(u).not.toHaveProperty('password_hash');
+    }
+  });
+
+  // ==========================================
+  // TEST-RBAC-16: Operator & Supervisor Access Users List
+  // ==========================================
+  it('TEST-RBAC-16: Operator and Supervisor access to user list -> 403 Forbidden', async () => {
+    // Operator access attempt
+    const opRes = await app.request('/api/users', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${operatorToken}`,
+      },
+    });
+    expect(opRes.status).toBe(403);
+    const opBody = (await opRes.json()) as any;
+    expect(opBody.error).toContain('Insufficient role permissions');
+
+    // Supervisor access attempt
+    const spRes = await app.request('/api/users', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+    });
+    expect(spRes.status).toBe(403);
+    const spBody = (await spRes.json()) as any;
+    expect(spBody.error).toContain('Insufficient role permissions');
+  });
+
+  // ==========================================
+  // TEST-RBAC-17: Admin Deactivate User
+  // ==========================================
+  let deactivatedUserId: number;
+  let deactivatedUsername: string;
+
+  it('TEST-RBAC-17: Admin deactivates user (is_active: false) -> 200 OK', async () => {
+    // Admin creates a temporary user to deactivate
+    deactivatedUsername = `rbac_deact_test_${Date.now()}`;
+    const createRes = await app.request('/api/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        username: deactivatedUsername,
+        email: `${deactivatedUsername}@hirose.co.id`,
+        password: 'Password123!',
+        role: 'Operator',
+      }),
+    });
+    expect(createRes.status).toBe(201);
+    const createData = (await createRes.json()) as any;
+    deactivatedUserId = createData.data.id;
+
+    // Admin deactivates the user
+    const deactivateRes = await app.request(`/api/users/${deactivatedUserId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        is_active: false,
+      }),
+    });
+
+    expect(deactivateRes.status).toBe(200);
+    const deactivateBody = (await deactivateRes.json()) as any;
+    expect(deactivateBody.data.id).toBe(deactivatedUserId);
+    expect(deactivateBody.data.is_active).toBe(false);
+  });
+
+  // ==========================================
+  // TEST-RBAC-18: Deactivated User Login Attempt
+  // ==========================================
+  it('TEST-RBAC-18: Deactivated user attempts login -> 403 Forbidden (US-AUTH-02)', async () => {
+    // Attempt login with newly deactivated user
+    const loginRes = await app.request('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: deactivatedUsername,
+        password: 'Password123!',
+      }),
+    });
+
+    expect(loginRes.status).toBe(403);
+    const loginBody = (await loginRes.json()) as any;
+    expect(loginBody.error).toContain('Account is deactivated');
+
+    // Also verify seeded 'inactive_user' is rejected
+    const seededInactiveRes = await app.request('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: 'inactive_user',
+        password: 'Password123!',
+      }),
+    });
+
+    expect(seededInactiveRes.status).toBe(403);
+    const seededBody = (await seededInactiveRes.json()) as any;
+    expect(seededBody.error).toContain('Account is deactivated');
   });
 
   // ==========================================
