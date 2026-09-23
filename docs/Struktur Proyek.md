@@ -7,6 +7,10 @@
 
 Sistem dirancang menggunakan pola **Monorepo Ringan** (*single repository* dengan dua sub-folder utama: `backend` dan `frontend`) untuk memudahkan evaluasi penguji, sentralisasi konfigurasi Docker Compose, serta konsistensi CI pipeline dalam satu `Jenkinsfile`.
 
+> [!NOTE]
+> **Isolasi Konfigurasi Environment Mandiri**:
+> Pengaturan environment dilakukan secara mandiri di masing-masing sub-folder servis (`backend/.env.example` dan `frontend/.env.example`). Tidak ada berkas `.env.example` maupun `.env` di tingkat root repositori, sehingga konfigurasi backend dan frontend terisolasi secara rapi dan independen.
+
 ```text
 hirose-maintenance-log/
 ├── AGENTS.md                     # Aturan universal agen AI (Database Safety & .env Protection)
