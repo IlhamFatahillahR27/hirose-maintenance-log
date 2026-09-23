@@ -30,3 +30,15 @@
 > - **Zero Read**: Never inspect or display the contents of `.env` files using any tool (`view_file`, `Get-Content`, `cat`, etc.) to protect user secrets and credentials.
 > - **Zero Write / Edit**: Never create, edit, replace, or modify `.env` files. The actual `.env` file is managed solely and manually by the **USER**.
 > - **Allowed Scope**: The AI is ONLY permitted to view, create, or update template files such as `.env.example` as a public reference for required environment variable names.
+
+---
+
+## 3. Directory Inspection & Terminal Reconnaissance Rule
+
+> [!WARNING]
+> **Prohibition of Unsolicited Directory Inspection Commands**:
+> The AI assistant must **NEVER** autonomously execute shell commands (e.g., `dir`, `ls`, `Get-ChildItem`) to scan, inspect, or explore directory structures (such as `backend\src\modules`, `backend\src\middlewares`, `backend\tests`, etc.) upon starting a conversation or planning a task.
+> 
+> - **Trust Project Blueprints**: Assume that the directory structure and implementation progress strictly adhere to the documentation in `docs/` (`Struktur Proyek.md` and `Roadmap Project.md`).
+> - **Prefer Internal File Tools**: When verifying code or file contents, use internal file-reading tools (`view_file`) on specific target files rather than running terminal directory listing commands.
+> - **Immediate Focus**: Proceed directly to discussing architecture, answering technical questions, or implementing the code requested by the user without preliminary terminal reconnaissance.
