@@ -54,3 +54,15 @@
 > - **In-Place Read & Update Only**: When the user requests work or progress tracking based on the Obsidian Vault roadmap, the AI must inspect (`view_file`) and update checklist items (`replace_file_content`) directly *in-place* at its external Obsidian Vault path.
 > - **Zero Project Duplication**: Under no circumstances should a copy of the Obsidian Vault roadmap be created in the repository's root folder (`./Roadmap Project.md`, `./Roadmap.md`) or anywhere in the project tree.
 > - **Clean Workspace**: Keep the project repository clean and focused strictly on application code and repository documentation, leaving the personal Obsidian Vault strictly as an external tracking workspace.
+
+---
+
+## 5. Gitignore Modular Scoping Rule (`.gitignore`)
+
+> [!IMPORTANT]
+> **Strict Sub-folder Scoping for Gitignore**:
+> The AI assistant must ensure that `.gitignore` files are strictly located and managed inside their respective service sub-folders (`backend/.gitignore` and `frontend/.gitignore`).
+> 
+> - **Zero Root `.gitignore`**: The AI assistant must **NEVER** create, restore, or maintain a `.gitignore` file in the root project directory. Any root `.gitignore` must be removed to avoid conflicting exclusion rules and maintain clean monorepo boundaries.
+> - **Independent Exclusions**: Each sub-service manages its own build outputs (`dist/`), dependencies (`node_modules/`), and private environments (`.env`, `.env.*`) while always preserving template files (`!.env.example`).
+
