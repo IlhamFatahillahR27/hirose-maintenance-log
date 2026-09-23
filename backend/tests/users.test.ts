@@ -53,6 +53,49 @@ describe('Fase 2.4: User Management API & RBAC Test Suite', () => {
         expect(u).not.toHaveProperty('password');
         expect(u).not.toHaveProperty('password_hash');
       }
+
+      expect(body).toHaveProperty('pagination');
+      expect(body.pagination.total_records).toBeGreaterThanOrEqual(3);
+    });
+
+    it('should support pagination on GET /api/users with page and limit parameters', async () => {
+      const res = await app.request('/api/users?page=1&limit=2', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.length).toBeLessThanOrEqual(2);
+      expect(body.pagination).toMatchObject({
+        current_page: 1,
+        limit: 2,
+      });
+      expect(body.pagination.total_records).toBeGreaterThanOrEqual(3);
+      expect(body.pagination.total_pages).toBe(
+        Math.ceil(body.pagination.total_records / 2)
+      );
+    });
+
+    it('should support server-side search by username on GET /api/users', async () => {
+      const res = await app.request('/api/users?search=supervisor', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.length).toBeGreaterThan(0);
+      for (const u of body.data) {
+        expect(
+          u.username.toLowerCase().includes('supervisor') ||
+            u.email.toLowerCase().includes('supervisor')
+        ).toBe(true);
+      }
     });
 
     it('should reject unauthenticated request with 401 Unauthorized', async () => {

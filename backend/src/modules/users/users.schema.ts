@@ -13,9 +13,49 @@ export const UserItemSchema = z
   })
   .openapi('UserItem');
 
+export const UserPaginationMetadataSchema = z
+  .object({
+    total_records: z.number().openapi({ example: 4 }),
+    current_page: z.number().openapi({ example: 1 }),
+    total_pages: z.number().openapi({ example: 1 }),
+    limit: z.number().openapi({ example: 20 }),
+  })
+  .openapi('UserPaginationMetadata');
+
+export const UsersQuerySchema = z
+  .object({
+    page: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(1)
+      .openapi({ example: 1, description: 'Page number (1-indexed)' }),
+    limit: z.coerce
+      .number()
+      .int()
+      .positive()
+      .max(100)
+      .default(20)
+      .openapi({ example: 20, description: 'Records per page limit (default 20, max 100)' }),
+    search: z
+      .string()
+      .optional()
+      .openapi({ example: 'operator', description: 'Search across username and email' }),
+    role: z
+      .enum(['Operator', 'Supervisor', 'Admin'])
+      .optional()
+      .openapi({ example: 'Operator', description: 'Filter by role name' }),
+    is_active: z.coerce
+      .boolean()
+      .optional()
+      .openapi({ example: true, description: 'Filter by account active status' }),
+  })
+  .openapi('UsersQuery');
+
 export const UsersListResponseSchema = z
   .object({
     data: z.array(UserItemSchema).openapi({ description: 'List of all system users' }),
+    pagination: UserPaginationMetadataSchema,
   })
   .openapi('UsersListResponse');
 
@@ -70,5 +110,6 @@ export const ErrorResponseSchema = z
   .openapi('UserErrorResponse');
 
 export type UserItem = z.infer<typeof UserItemSchema>;
+export type UsersQueryInput = z.infer<typeof UsersQuerySchema>;
 export type CreateUserInput = z.infer<typeof CreateUserRequestSchema>;
 export type UpdateUserStatusInput = z.infer<typeof UpdateUserStatusRequestSchema>;

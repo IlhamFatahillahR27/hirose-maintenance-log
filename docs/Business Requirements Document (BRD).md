@@ -94,7 +94,7 @@ Semua aturan hak akses pada tabel di bawah ini **wajib divalidasi langsung oleh 
 - **FR-AUTH-06**: Terdapat endpoint profil (`/auth/me`) untuk mengambil data pengguna yang sedang login beserta role-nya.
 
 ### 4.2 Modul Master Mesin (MCH - Read-Only Helper)
-- **FR-MCH-01**: Menyediakan endpoint `GET /api/machines` yang mengembalikan daftar mesin aktif (`id`, `code`, `name`, `location`).
+- **FR-MCH-01**: Menyediakan endpoint `GET /api/machines` yang mengembalikan daftar mesin aktif (`id`, `code`, `name`, `location`), mendukung paginasi server-side (`page`, `limit` default 50) dan pencarian `search` multi-kolom.
 - **FR-MCH-02**: Endpoint ini digunakan oleh frontend untuk merender opsi dropdown pada form pembuatan request serta filter pencarian.
 - **FR-MCH-03**: Data master mesin dipasok secara otomatis melalui Database Seeder tanpa memerlukan modul CRUD UI manual.
 
@@ -124,7 +124,7 @@ Semua aturan hak akses pada tabel di bawah ini **wajib divalidasi langsung oleh 
 - **FR-REQ-08**: Admin dapat mengedit dan menghapus request apa pun.
 
 ### 4.4 Modul Manajemen Pengguna (USER - Khusus Admin)
-- **FR-USR-01**: Admin dapat melihat daftar seluruh pengguna yang terdaftar di sistem.
+- **FR-USR-01**: Admin dapat melihat daftar seluruh pengguna yang terdaftar di sistem dengan dukungan paginasi (`page`, `limit` default 20), filter (`role`, `is_active`), dan pencarian (`search`). Respons tidak pernah mengekspos hash password.
 - **FR-USR-02**: Admin dapat membuat pengguna baru dengan mendefinisikan `username`, `email`, `role`, dan `initial_password`.
 - **FR-USR-03**: Admin dapat memperbarui profil atau role pengguna lain.
 - **FR-USR-04**: Admin dapat mengaktifkan atau menonaktifkan pengguna (*Soft Deactivation* via `is_active = false`).

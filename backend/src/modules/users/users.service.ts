@@ -1,9 +1,10 @@
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, and, or, ilike, count, type SQL } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import { users, roles } from '../../db/schema.js';
 import { hashPassword } from '../../utils/password.js';
 import type {
   UserItem,
+  UsersQueryInput,
   CreateUserInput,
   UpdateUserStatusInput,
 } from './users.schema.js';
@@ -35,10 +36,56 @@ function formatUserItem(row: any): UserItem {
 }
 
 /**
- * Retrieves all registered users with their assigned role name (US-USR-01, TEST-RBAC-15).
+ * Retrieves paginated registered users list with search and filters (US-USR-01, TEST-RBAC-15).
  * Explicitly excludes password_hash from the query projection to prevent credential leakage.
  */
-export async function getAllUsers(): Promise<UserItem[]> {
+export async function getAllUsers(
+  query: UsersQueryInput = { page: 1, limit: 20 }
+): Promise<{
+  data: UserItem[];
+  pagination: {
+    total_records: number;
+    current_page: number;
+    total_pages: number;
+    limit: number;
+  };
+}> {
+  const whereConditions: SQL[] = [];
+
+  if (query.role) {
+    whereConditions.push(eq(roles.name, query.role));
+  }
+
+  if (query.is_active !== undefined) {
+    whereConditions.push(eq(users.is_active, query.is_active));
+  }
+
+  if (query.search && query.search.trim()) {
+    const term = `%${query.search.trim()}%`;
+    const searchCond = or(
+      ilike(users.username, term),
+      ilike(users.email, term)
+    );
+    if (searchCond) {
+      whereConditions.push(searchCond);
+    }
+  }
+
+  const whereClause =
+    whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+  const [countResult] = await db
+    .select({ count: count() })
+    .from(users)
+    .innerJoin(roles, eq(users.role_id, roles.id))
+    .where(whereClause);
+
+  const total_records = Number(countResult?.count ?? 0);
+  const page = Math.max(1, query.page || 1);
+  const limit = Math.min(100, Math.max(1, query.limit || 20));
+  const offset = (page - 1) * limit;
+  const total_pages = Math.ceil(total_records / limit) || 1;
+
   const result = await db
     .select({
       id: users.id,
@@ -52,9 +99,20 @@ export async function getAllUsers(): Promise<UserItem[]> {
     })
     .from(users)
     .innerJoin(roles, eq(users.role_id, roles.id))
-    .orderBy(asc(users.id));
+    .where(whereClause)
+    .orderBy(asc(users.id))
+    .limit(limit)
+    .offset(offset);
 
-  return result.map(formatUserItem);
+  return {
+    data: result.map(formatUserItem),
+    pagination: {
+      total_records,
+      current_page: page,
+      total_pages,
+      limit,
+    },
+  };
 }
 
 /**

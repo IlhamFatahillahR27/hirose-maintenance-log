@@ -146,4 +146,51 @@ describe('Fase 2.2: Master Mesin (Read-Only Helper Endpoint) Test Suite', () => 
       }
     });
   });
+
+  describe('Pagination & Search (US-MCH-01)', () => {
+    it('should return pagination metadata on GET /api/machines', async () => {
+      const { token } = await loginAndGetToken('operator1');
+
+      const res = await app.request('/api/machines?page=1&limit=3', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.length).toBe(3);
+      expect(body.pagination).toMatchObject({
+        current_page: 1,
+        limit: 3,
+      });
+      expect(body.pagination.total_records).toBeGreaterThanOrEqual(7);
+      expect(body.pagination.total_pages).toBe(
+        Math.ceil(body.pagination.total_records / 3)
+      );
+    });
+
+    it('should search machines by keyword on GET /api/machines', async () => {
+      const { token } = await loginAndGetToken('operator1');
+
+      const res = await app.request('/api/machines?search=MOLD', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as any;
+      expect(body.data.length).toBeGreaterThan(0);
+      for (const m of body.data) {
+        expect(
+          m.code.includes('MOLD') ||
+            m.name.includes('MOLD') ||
+            m.location.includes('MOLD')
+        ).toBe(true);
+      }
+    });
+  });
 });

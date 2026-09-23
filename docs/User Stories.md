@@ -79,7 +79,7 @@ Scenario: Mengambil daftar mesin aktif
   Given pengguna telah terautentikasi (Operator, Supervisor, atau Admin)
   When pengguna memanggil endpoint "GET /api/machines"
   Then sistem mengembalikan status 200 OK
-  And payload berisi daftar mesin (id, code, name, location)
+  And payload berisi data daftar mesin (id, code, name, location) serta metadata pagination (total_records, current_page, total_pages, limit)
   And frontend menampilkan daftar tersebut pada komponen dropdown/combobox dengan format "code - name (location)"
 ```
 
@@ -284,7 +284,7 @@ Scenario: Admin menghapus request
 Scenario: Admin mengakses manajemen user
   Given Admin telah login
   When Admin memanggil endpoint "GET /api/users"
-  Then sistem mengembalikan 200 OK dengan array seluruh user (id, username, email, role, is_active, created_at)
+  Then sistem mengembalikan 200 OK dengan data array user (id, username, email, role, is_active, created_at) serta metadata pagination (total_records, current_page, total_pages, limit)
   And data hash password TIDAK PERNAH dikembalikan ke response client
 
 Scenario: Operator atau Supervisor mencoba mengakses daftar user

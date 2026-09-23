@@ -3,6 +3,7 @@ import type { AppEnv } from '../../types/context.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 import { requireRoles } from '../../middlewares/rbac.middleware.js';
 import {
+  UsersQuerySchema,
   CreateUserRequestSchema,
   UpdateUserStatusRequestSchema,
   UsersListResponseSchema,
@@ -34,17 +35,20 @@ const UserIdParamSchema = z.object({
 });
 
 // ==========================================
-// 1. GET /api/users (List All Users - Admin Only)
+// 1. GET /api/users (List All Users with Pagination & Filters - Admin Only)
 // ==========================================
 export const getUsersRoute = createRoute({
   method: 'get',
   path: '/',
   tags: ['Users'],
-  summary: 'Get all users list (FR-USR-01, US-USR-01, TEST-RBAC-15)',
+  summary: 'Get all users list with pagination (FR-USR-01, US-USR-01, TEST-RBAC-15)',
   description:
-    'Returns a list of all registered users without password hashes. Restricted strictly to Admin role.',
+    'Returns a paginated list of all registered users without password hashes. Supports page, limit, search, role, and active status filters. Restricted strictly to Admin role.',
   middleware: [authMiddleware, requireRoles(['Admin'])] as const,
   security: [{ BearerAuth: [] }],
+  request: {
+    query: UsersQuerySchema,
+  },
   responses: {
     200: {
       content: {
@@ -74,9 +78,11 @@ export const getUsersRoute = createRoute({
 });
 
 usersRoutes.openapi(getUsersRoute, async (c) => {
+  const query = c.req.valid('query');
+
   try {
-    const data = await getAllUsers();
-    return c.json({ data }, 200);
+    const result = await getAllUsers(query);
+    return c.json(result, 200);
   } catch (err: any) {
     if (err instanceof HttpError) {
       return c.json({ error: err.message }, err.status as any);

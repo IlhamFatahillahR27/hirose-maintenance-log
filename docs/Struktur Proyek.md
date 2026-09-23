@@ -51,7 +51,10 @@ hirose-maintenance-log/
 │   └── tests/                    # FOLDER KHUSUS PENGUJIAN OTOMATIS BACKEND (SEJAJAR DENGAN SRC)
 │       ├── helpers.ts            # Utilitas testing, mock user, & auth helper
 │       ├── auth.test.ts          # Pengujian endpoint auth, verifikasi JWT, & middleware RBAC
-│       └── rbac.test.ts          # Pengujian otomatis lengkap 18 poin Matriks RBAC
+│       ├── machines.test.ts      # Pengujian master mesin, dropdown helper, & paginasi
+│       ├── rbac.test.ts          # Pengujian otomatis lengkap 14 skenario RBAC & paginasi request
+│       ├── users.test.ts         # Pengujian user management admin, soft deactivation, & paginasi
+│       └── observability.test.ts # Pengujian healthcheck (DB ping), OpenAPI 3.0, & Swagger UI
 │
 └── frontend/                     # Antarmuka Pengguna (Vue 3 Vite SPA)
     ├── .env.example              # Template variabel lingkungan frontend (VITE_API_BASE_URL)

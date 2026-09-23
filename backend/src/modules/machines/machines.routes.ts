@@ -2,10 +2,11 @@ import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
 import type { AppEnv } from '../../types/context.js';
 import { authMiddleware } from '../../middlewares/auth.middleware.js';
 import {
+  MachinesQuerySchema,
   MachinesListResponseSchema,
   ErrorResponseSchema,
 } from './machines.schema.js';
-import { getActiveMachines } from './machines.service.js';
+import { getPaginatedActiveMachines } from './machines.service.js';
 
 export const machinesRoutes = new OpenAPIHono<AppEnv>();
 
@@ -15,9 +16,12 @@ export const getMachinesRoute = createRoute({
   tags: ['Machines'],
   summary: 'Get active machines list (FR-MCH-01, US-MCH-01)',
   description:
-    'Returns a list of active precision machines for dropdown options in maintenance requests and search filters. Accessible by any authenticated role.',
+    'Returns a paginated list of active precision machines for dropdown options in maintenance requests and search filters. Accessible by any authenticated role.',
   middleware: [authMiddleware] as const,
   security: [{ BearerAuth: [] }],
+  request: {
+    query: MachinesQuerySchema,
+  },
   responses: {
     200: {
       content: {
@@ -39,6 +43,7 @@ export const getMachinesRoute = createRoute({
 });
 
 machinesRoutes.openapi(getMachinesRoute, async (c) => {
-  const data = await getActiveMachines();
-  return c.json({ data }, 200);
+  const query = c.req.valid('query');
+  const result = await getPaginatedActiveMachines(query);
+  return c.json(result, 200);
 });
