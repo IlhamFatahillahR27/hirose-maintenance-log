@@ -42,3 +42,15 @@
 > - **Trust Project Blueprints**: Assume that the directory structure and implementation progress strictly adhere to the documentation in `docs/` (`Struktur Proyek.md` and `Roadmap Project.md`).
 > - **Prefer Internal File Tools**: When verifying code or file contents, use internal file-reading tools (`view_file`) on specific target files rather than running terminal directory listing commands.
 > - **Immediate Focus**: Proceed directly to discussing architecture, answering technical questions, or implementing the code requested by the user without preliminary terminal reconnaissance.
+
+---
+
+## 4. External Obsidian Vault Roadmap Protection Rule
+
+> [!CAUTION]
+> **Strict Prohibition of Copying Obsidian Vault Files**:
+> The AI assistant must **NEVER** copy, move, duplicate, or import any roadmap or documentation files from the external Obsidian Vault (specifically `D:\pribadi\ObsidianVault\Ilham's Space\Research\Technical Test\PT Hirose Electric Indonesia\Roadmap Project.md` or any other files in the vault) into this project directory (`D:\pribadi\Projects\hirose-maintenance-log\`), whether in the project root or inside subdirectories.
+> 
+> - **In-Place Read & Update Only**: When the user requests work or progress tracking based on the Obsidian Vault roadmap, the AI must inspect (`view_file`) and update checklist items (`replace_file_content`) directly *in-place* at its external Obsidian Vault path.
+> - **Zero Project Duplication**: Under no circumstances should a copy of the Obsidian Vault roadmap be created in the repository's root folder (`./Roadmap Project.md`, `./Roadmap.md`) or anywhere in the project tree.
+> - **Clean Workspace**: Keep the project repository clean and focused strictly on application code and repository documentation, leaving the personal Obsidian Vault strictly as an external tracking workspace.
