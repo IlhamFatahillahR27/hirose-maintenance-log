@@ -80,7 +80,7 @@ Scenario: Mengambil daftar mesin aktif
   When pengguna memanggil endpoint "GET /api/machines"
   Then sistem mengembalikan status 200 OK
   And payload berisi data daftar mesin (id, code, name, location) serta metadata pagination (total_records, current_page, total_pages, limit)
-  And frontend menampilkan daftar tersebut pada komponen dropdown/combobox dengan format "code - name (location)"
+  And frontend menampilkan daftar tersebut pada komponen Select/Combobox (shadcn-vue) dengan format "code - name (location)"
 ```
 
 ---
@@ -123,6 +123,7 @@ Scenario: Operator membuka halaman daftar request
   Then sistem backend otomatis memfilter query "WHERE created_by = current_user.id"
   And respons 200 OK hanya mengembalikan 3 record milik Operator tersebut
   And Operator TIDAK DAPAT melihat request yang dibuat oleh rekan operator lain
+  And daftar tiket disajikan melalui komponen PrimeVue DataTable dengan badge status shadcn-vue
 ```
 
 ---
@@ -185,6 +186,7 @@ Scenario: Supervisor membuka halaman daftar request
   Then sistem merespons dengan status 200 OK
   And payload menyajikan seluruh data request dari seluruh operator
   And data menampilkan informasi pembuat ("created_by"), mesin, lokasi, prioritas, dan status
+  And tabel PrimeVue DataTable mendukung lazy server-side pagination serta filter status dan prioritas
 ```
 
 ---
@@ -286,6 +288,7 @@ Scenario: Admin mengakses manajemen user
   When Admin memanggil endpoint "GET /api/users"
   Then sistem mengembalikan 200 OK dengan data array user (id, username, email, role, is_active, created_at) serta metadata pagination (total_records, current_page, total_pages, limit)
   And data hash password TIDAK PERNAH dikembalikan ke response client
+  And data disajikan melalui PrimeVue DataTable dengan kolom toggle switch status aktif/nonaktif akun
 
 Scenario: Operator atau Supervisor mencoba mengakses daftar user
   Given Operator atau Supervisor memanggil endpoint "GET /api/users"
@@ -343,6 +346,7 @@ Scenario: Melakukan query dengan parameter filter, pencarian, dan limit
   And sistem merespons dalam waktu < 200ms
   And payload mengembalikan tepat 10 record yang cocok
   And menyertakan metadata navigasi: "total_records", "current_page", "total_pages"
+  And komponen PrimeVue DataTable secara otomatis memperbarui paginator dan baris data berdasarkan metadata respons
 ```
 
 ---

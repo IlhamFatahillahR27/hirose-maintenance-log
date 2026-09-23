@@ -3,7 +3,7 @@
 **Posisi**: Technical Take-Home Test — Full Stack Engineer  
 **Teknologi Backend Terpilih**: Hono (TypeScript)  
 **Database**: PostgreSQL  
-**Frontend**: Vue 3 / Nuxt  
+**Frontend**: Vue 3 SPA (Vite + Tailwind CSS + shadcn-vue + PrimeVue DataTable)  
 **Batas Waktu**: 24 September 2026, 10:00 WIB  
 
 ---
@@ -39,6 +39,7 @@ Membangun aplikasi web internal **Maintenance Request Log** yang berfungsi sebag
   - *Catatan Desain*: Desain tabel ini menyertakan `updated_at` sehingga ramah untuk arsitektur masa depan (*future sync* berbasis perbandingan `updated_at > last_sync` dengan sistem master/ERP eksternal) tanpa menambah beban fitur CRUD yang tidak diminta saat ini.
 - **Server-Side Input Validation**: Validasi skema input request secara ketat di backend menggunakan Zod.
 - **Seed Data Otomatis**: Penyediaan akun percontohan untuk setiap role, data master mesin awal beserta lokasi, dan beberapa data request awal.
+- **Arsitektur Antarmuka Modern**: Vue 3 SPA berbasis Vite dan Tailwind CSS, menggunakan kumpulan komponen atomik aksesibel **shadcn-vue** untuk form dan modal dialog, serta **PrimeVue DataTable** (100% open-source berlisensi MIT) untuk visualisasi tabel data dan paginasi server-side berkinerja tinggi.
 - **Orkestrasi Docker**: Menjalankan seluruh sistem (Backend, Frontend, Database) hanya dengan satu perintah `docker compose up`.
 - **Pipeline CI**: File `Jenkinsfile` di root repositori dengan penjelasan komprehensif pada `README.md`.
 
@@ -281,7 +282,7 @@ Struktur hak akses berbasis relasional database (read-only dari sistem, tanpa mo
 ## 8. Kriteria Penerimaan (Acceptance Criteria / Definition of Done)
 
 Proyek dinyatakan selesai dan siap diserahkan apabila:
-- [ ] Backend Hono (TypeScript) dan Frontend Vue 3/Nuxt berjalan lancar dan terhubung ke PostgreSQL via Docker Compose tanpa intervensi manual.
+- [ ] Backend Hono (TypeScript) dan Frontend Vue 3 SPA (Tailwind CSS + shadcn-vue + PrimeVue DataTable) berjalan lancar dan terhubung ke PostgreSQL via Docker Compose tanpa intervensi manual.
 - [ ] Master data mesin dan lokasinya ter-seed otomatis dan dapat diakses via `GET /api/machines` untuk pilihan dropdown form pelaporan.
 - [ ] Pengujian manual dan otomatis membuktikan bahwa **seluruh aturan Matriks Hak Akses (RBAC)** ditegakkan di sisi API.
 - [ ] Seluruh input API tervalidasi di sisi server (Zod) dan password tersimpan dengan hashing aman.

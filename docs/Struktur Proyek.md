@@ -59,19 +59,28 @@ hirose-maintenance-log/
 └── frontend/                     # Antarmuka Pengguna (Vue 3 Vite SPA)
     ├── .env.example              # Template variabel lingkungan frontend (VITE_API_BASE_URL)
     ├── .gitignore                # Mengabaikan node_modules, dist, .env, dll
+    ├── components.json           # Konfigurasi shadcn-vue CLI & path aliases (@/components/ui)
     ├── Dockerfile                # Multi-stage Docker build untuk frontend (Nginx)
     ├── nginx.conf                # Konfigurasi Nginx SPA reverse proxy & history mode
-    ├── package.json              # Dependencies frontend
-    ├── vite.config.ts            # Konfigurasi Vite Vue 3
+    ├── package.json              # Dependencies frontend (vue, pinia, primevue, @primevue/themes, radix-vue, dll)
+    ├── tailwind.config.js        # Konfigurasi Tailwind CSS & tema shadcn
+    ├── vite.config.ts            # Konfigurasi Vite Vue 3 & path alias '@' -> 'src/'
     ├── vitest.config.ts          # Konfigurasi automated testing frontend (Vitest)
     ├── index.html                # Entry point HTML
     ├── src/                      # Source code aplikasi frontend murni (bebas dari file pengujian)
-    │   ├── App.vue               # Root Vue component
-    │   ├── assets/               # Styling global (CSS / Tailwind / Icons)
-    │   ├── components/           # Komponen UI reusable (Navbar, Badges, Modals)
+    │   ├── main.ts               # Inisialisasi Vue, Pinia, Router, & Plugin PrimeVue (Aura Theme Preset)
+    │   ├── App.vue               # Root Vue component (Toaster & RouterView)
+    │   ├── assets/               # Styling global (CSS / Tailwind base directives)
+    │   ├── components/           # Komponen antarmuka modular
+    │   │   ├── ui/               # Komponen atomik shadcn-vue (Button, Dialog, Badge, Input, Label, Select)
+    │   │   ├── layout/           # Navbar.vue & AppShell
+    │   │   └── requests/         # RequestModal.vue, ReviewModal.vue
     │   ├── composables/          # Custom composables / fetch wrapper (useApi, useAuth)
     │   ├── router/               # Vue Router & client-side route guard (auth & role check)
-    │   ├── views/                # Halaman aplikasi (LoginView, RequestsView, UsersView)
+    │   ├── views/                # Halaman aplikasi
+    │   │   ├── LoginView.vue     # Halaman login dengan Form & Card shadcn-vue
+    │   │   ├── RequestsView.vue  # Halaman utama dengan PrimeVue DataTable (Lazy Server-Side Pagination)
+    │   │   └── UsersView.vue     # Halaman manajemen pengguna dengan PrimeVue DataTable (Admin Only)
     │   └── stores/               # State management (Pinia) untuk user & token
     └── tests/                    # FOLDER KHUSUS PENGUJIAN OTOMATIS FRONTEND (SEJAJAR DENGAN SRC)
         ├── unit/                 # Pengujian unit untuk stores Pinia & composables useApi
@@ -104,10 +113,16 @@ Untuk menjaga kode tetap bersih, mudah diuji, dan transparan saat *code walkthro
 1. **Route Middleware (Client Guard)**:
    - Mencegah pengguna belum login mengakses halaman dashboard (dilempar ke `/login`).
    - Mencegah pengguna selain Admin mengakses halaman menu `/users`.
-2. **Components**:
-   - Komponen visual modular yang menerima properti (`props`) dan mengirimkan aksi (`events`).
-3. **Composables / API Client**:
-   - Sentralisasi pemanggilan HTTP ke backend Hono dengan otomatis menyisipkan header Authorization (Bearer Token) dan menangani error secara terpadu.
+2. **shadcn-vue UI Primitives Layer (`components/ui/`)**:
+   - Komponen visual atomik dan dialog interaktif berbasis Tailwind CSS dan Radix Vue (Button, Input, Label, Badge, Select, Dialog/Modal, DropdownMenu).
+   - Menangani modal pembuatan request (`RequestModal.vue`), review persetujuan (`ReviewModal.vue`), dan konfirmasi dialog.
+3. **PrimeVue DataTable Layer (`views/`)**:
+   - Menangani representasi data tabular masif (riwayat tiket perbaikan dan daftar pengguna).
+   - Memanfaatkan kapabilitas *lazy loading* bawaan PrimeVue (`@page`, `@sort`, `@filter`) yang langsung sinkron dengan parameter query API backend Hono (`page`, `limit`, `status`, `priority`, `search`).
+   - Menggunakan slot kustom (`#body`) untuk menyematkan badge status/prioritas dan tombol aksi shadcn-vue secara harmonis.
+4. **Composables & State Layer (`composables/` & `stores/`)**:
+   - `stores/auth.ts`: State management token JWT, user aktif, role, dan logika login/logout via Pinia.
+   - `composables/useApi.ts`: Sentralisasi pemanggilan HTTP ke backend Hono dengan otomatis menyisipkan header Authorization (Bearer Token) dan menangani error secara terpadu.
 
 ---
 
@@ -181,6 +196,19 @@ npm create hono@latest backend
 
 # 2. Inisialisasi Frontend (Vue 3 Vite SPA)
 npm create vue@latest frontend -- --typescript --router --pinia --eslint --prettier
+cd frontend && npm install
+
+# 2.1 Setup Tailwind CSS & Tooling
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+# 2.2 Setup shadcn-vue (UI Primitives & Modals)
+npm install radix-vue class-variance-authority clsx tailwind-merge lucide-vue-next
+npx shadcn-vue@latest init
+
+# 2.3 Setup PrimeVue v4 & Aura Theme Preset (Open-Source MIT DataTable)
+npm install primevue @primevue/themes primeicons
+
 # Pindahkan folder pengujian default src/__tests__ ke tests/
 
 # 3. Buat file root & template konfigurasi
