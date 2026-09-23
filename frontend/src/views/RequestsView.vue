@@ -25,13 +25,17 @@ import {
   Building2,
   Calendar,
   UserCheck,
+  WifiOff,
 } from 'lucide-vue-next'
+import { useConnectionStore } from '@/stores/connection'
 
 const authStore = useAuthStore()
+const connectionStore = useConnectionStore()
 
 // State
 const requests = ref<any[]>([])
 const isLoading = ref(false)
+const fetchError = ref<string | null>(null)
 const totalRecords = ref(0)
 const currentPage = ref(1)
 const limit = ref(10)
@@ -70,6 +74,7 @@ function resetFilters() {
 
 async function fetchRequests() {
   isLoading.value = true
+  fetchError.value = null
   try {
     const params: Record<string, any> = {
       page: currentPage.value,
@@ -90,7 +95,13 @@ async function fetchRequests() {
     totalRecords.value = response.data.pagination.total_records
     currentPage.value = response.data.pagination.current_page
   } catch (err: any) {
-    // Error handling
+    if (!err.response || err.code === 'ERR_NETWORK') {
+      fetchError.value =
+        'Tidak dapat terhubung ke server backend (offline atau network error).'
+    } else {
+      fetchError.value =
+        err.response?.data?.error || 'Gagal memuat data tiket kendala.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -266,7 +277,30 @@ onMounted(() => {
         class="text-sm"
       >
         <template #empty>
-          <div class="p-8 text-center text-slate-500">
+          <div v-if="fetchError || connectionStore.isOffline" class="p-8 text-center space-y-3" data-testid="table-offline-state">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-700 mb-1">
+              <WifiOff class="w-6 h-6" />
+            </div>
+            <div class="text-base font-semibold text-slate-800">
+              Gagal Menghubungkan ke Server Backend
+            </div>
+            <p class="text-sm text-slate-500 max-w-md mx-auto">
+              {{ fetchError || 'Server backend sedang offline atau tidak dapat dijangkau. Silakan periksa koneksi atau aktifkan kembali service backend.' }}
+            </p>
+            <div class="pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                @click="fetchRequests"
+                :disabled="isLoading"
+                class="gap-1.5 text-slate-700 bg-white"
+              >
+                <RefreshCw :class="['w-3.5 h-3.5', isLoading ? 'animate-spin' : '']" />
+                <span>Coba Muat Ulang</span>
+              </Button>
+            </div>
+          </div>
+          <div v-else class="p-8 text-center text-slate-500">
             Tidak ada tiket kendala yang ditemukan untuk kriteria filter ini.
           </div>
         </template>

@@ -60,10 +60,15 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true }
       } catch (err: any) {
-        const message =
-          err.response?.data?.error ||
-          err.response?.data?.message ||
-          'Gagal masuk. Silakan periksa username dan kata sandi Anda.'
+        let message = 'Gagal masuk. Silakan periksa username dan kata sandi Anda.'
+        if (!err.response || err.code === 'ERR_NETWORK') {
+          message =
+            'Tidak dapat terhubung ke server backend. Pastikan server API sedang aktif.'
+        } else if (err.response?.data?.error) {
+          message = err.response.data.error
+        } else if (err.response?.data?.message) {
+          message = err.response.data.message
+        }
         this.errorMessage = message
         return { success: false, error: message }
       } finally {

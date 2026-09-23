@@ -1,19 +1,43 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useConnectionStore } from '@/stores/connection'
 import Navbar from '@/components/layout/Navbar.vue'
+import ConnectionBanner from '@/components/layout/ConnectionBanner.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
+const connectionStore = useConnectionStore()
 
 const showNavbar = computed(() => {
   return authStore.isAuthenticated && route.name !== 'login'
+})
+
+function onWindowFocus() {
+  if (connectionStore.isOffline) {
+    connectionStore.checkConnection()
+  }
+}
+
+function onWindowOnline() {
+  connectionStore.checkConnection()
+}
+
+onMounted(() => {
+  window.addEventListener('focus', onWindowFocus)
+  window.addEventListener('online', onWindowOnline)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', onWindowFocus)
+  window.removeEventListener('online', onWindowOnline)
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased">
+    <ConnectionBanner />
     <Navbar v-if="showNavbar" />
 
     <main class="flex-1">
