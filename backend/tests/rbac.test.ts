@@ -341,6 +341,101 @@ describe('Fase 3: Automated Testing RBAC (Vitest) - Full 18-Point Permission Mat
   });
 
   // ==========================================
+  // TEST-RBAC-11b: Supervisor Edit Own Request (Submitted)
+  // ==========================================
+  it('TEST-RBAC-11b: Supervisor successfully edits their own request when status is Submitted -> 200 OK', async () => {
+    // Supervisor creates own request
+    const createRes = await app.request('/api/requests', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        machine_id: 2,
+        problem_description: 'Precision punch pin micro-wear detected during shift change',
+        priority: 'Medium',
+      }),
+    });
+    expect(createRes.status).toBe(201);
+    const createData = (await createRes.json()) as any;
+    const supervisorReqId = createData.data.id;
+
+    // Supervisor edits own Submitted request
+    const updateRes = await app.request(`/api/requests/${supervisorReqId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        problem_description: 'Precision punch pin micro-wear verified, urgent tooling replacement needed',
+        priority: 'High',
+      }),
+    });
+
+    expect(updateRes.status).toBe(200);
+    const updateBody = (await updateRes.json()) as any;
+    expect(updateBody.data.problem_description).toBe(
+      'Precision punch pin micro-wear verified, urgent tooling replacement needed'
+    );
+    expect(updateBody.data.priority).toBe('High');
+  });
+
+  // ==========================================
+  // TEST-RBAC-11c: Supervisor Edit Own Request Once Reviewed
+  // ==========================================
+  it('TEST-RBAC-11c: Supervisor attempts to edit own request after it has been reviewed -> 403 Forbidden', async () => {
+    // Supervisor creates own request
+    const createRes = await app.request('/api/requests', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        machine_id: 3,
+        problem_description: 'Cooling fluid pressure drop in molding sector B',
+        priority: 'Low',
+      }),
+    });
+    expect(createRes.status).toBe(201);
+    const createData = (await createRes.json()) as any;
+    const supervisorReqId = createData.data.id;
+
+    // Admin reviews (approves) this request
+    const reviewRes = await app.request(`/api/requests/${supervisorReqId}/review`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        status: 'Approved',
+        reviewer_notes: 'Approved for scheduled maintenance.',
+      }),
+    });
+    expect(reviewRes.status).toBe(200);
+
+    // Supervisor attempts to edit own request now that it is Approved
+    const updateRes = await app.request(`/api/requests/${supervisorReqId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${supervisorToken}`,
+      },
+      body: JSON.stringify({
+        problem_description: 'Attempting to edit already approved request',
+      }),
+    });
+
+    expect(updateRes.status).toBe(403);
+    const body = (await updateRes.json()) as any;
+    expect(body.error).toContain('Cannot edit request that has already been reviewed');
+  });
+
+
+  // ==========================================
   // TEST-RBAC-12: Supervisor Delete Request
   // ==========================================
   it('TEST-RBAC-12: Supervisor attempts to delete request -> 403 Forbidden', async () => {

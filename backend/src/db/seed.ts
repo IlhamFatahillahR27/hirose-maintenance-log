@@ -82,6 +82,7 @@ async function seed() {
       { role: 'Supervisor', perm: 'requests:create' },
       { role: 'Supervisor', perm: 'requests:read_own' },
       { role: 'Supervisor', perm: 'requests:read_all' },
+      { role: 'Supervisor', perm: 'requests:update_own' },
       { role: 'Supervisor', perm: 'requests:review' },
       // Admin (All permissions)
       { role: 'Admin', perm: 'machines:read' },

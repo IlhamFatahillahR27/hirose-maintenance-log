@@ -361,22 +361,22 @@ onMounted(() => {
                 <span>Review</span>
               </Button>
 
-              <!-- Operator: Edit Button (Only if Submitted & Own Ticket) -->
-              <template v-if="authStore.isOperator">
+              <!-- Operator / Supervisor: Edit Button (Only if Submitted & Own Ticket) -->
+              <template v-if="authStore.isOperator || authStore.isSupervisor">
                 <Button
                   v-if="data.status === 'Submitted' && data.created_by === authStore.user?.id"
                   variant="outline"
                   size="sm"
                   @click="openEdit(data)"
                   class="h-8 px-2 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
-                  title="Edit Laporan"
+                  title="Edit Laporan Mandiri"
                 >
                   <Edit class="w-4 h-4" />
                 </Button>
                 <span
-                  v-else
+                  v-else-if="data.created_by === authStore.user?.id"
                   class="inline-flex items-center gap-1 text-xs text-slate-400 py-1 px-1.5"
-                  title="Tiket terkunci untuk diedit"
+                  title="Tiket terkunci untuk diedit (sudah direview)"
                 >
                   <Lock class="w-3.5 h-3.5" />
                 </span>

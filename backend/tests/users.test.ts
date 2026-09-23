@@ -347,6 +347,7 @@ describe('Fase 2.4: User Management API & RBAC Test Suite', () => {
   // ==========================================
   describe('PUT /api/users/:id (FR-USR-03, BRD 3.2)', () => {
     it('should allow Admin to update user email and role -> 200 OK', async () => {
+      const updatedEmail = `updated_user_${Date.now()}@hirose.co.id`;
       const res = await app.request(`/api/users/${createdUserId}`, {
         method: 'PUT',
         headers: {
@@ -354,14 +355,14 @@ describe('Fase 2.4: User Management API & RBAC Test Suite', () => {
           Authorization: `Bearer ${adminToken}`,
         },
         body: JSON.stringify({
-          email: 'updated_user@hirose.co.id',
+          email: updatedEmail,
           role: 'Supervisor',
         }),
       });
 
       expect(res.status).toBe(200);
       const body = (await res.json()) as any;
-      expect(body.data.email).toBe('updated_user@hirose.co.id');
+      expect(body.data.email).toBe(updatedEmail);
       expect(body.data.role).toBe('Supervisor');
     });
 
