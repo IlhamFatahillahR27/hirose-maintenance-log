@@ -6,6 +6,7 @@ import { loggerMiddleware } from './middlewares/logger.middleware.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { machinesRoutes } from './modules/machines/machines.routes.js';
 import { requestsRoutes } from './modules/requests/requests.routes.js';
+import { usersRoutes } from './modules/users/users.routes.js';
 
 export const app = new OpenAPIHono<AppEnv>({
   defaultHook: (result, c) => {
@@ -42,6 +43,7 @@ app.get('/', (c) => {
 app.route('/api/auth', authRoutes);
 app.route('/api/machines', machinesRoutes);
 app.route('/api/requests', requestsRoutes);
+app.route('/api/users', usersRoutes);
 
 // 4. Global Error Handlers
 app.notFound((c) => {
