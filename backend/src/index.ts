@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
+import { cors } from 'hono/cors';
 import { sql } from 'drizzle-orm';
 import { db } from './db/index.js';
 import { env } from './config/env.js';
@@ -30,7 +31,8 @@ export const app = new OpenAPIHono<AppEnv>({
   },
 });
 
-// 1. Global Structured Logging (US-SYS-02 / Bonus #4)
+// 1. Global Structured Logging & CORS
+app.use('*', cors());
 app.use('*', loggerMiddleware);
 
 // 2. Register Bearer Authentication Security Scheme for OpenAPI
